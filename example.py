@@ -19,6 +19,7 @@ import werkzeug.serving
 import pokemon_pb2
 import time
 import already_captured
+import ignored
 from google.protobuf.internal import encoder
 from google.protobuf.message import DecodeError
 from s2sphere import *
@@ -33,6 +34,7 @@ from transform import *
 
 # load the list of pokemons already captured
 pokemon_already_captured_ids = [int(i) for i in already_captured.pokemons_already_captured.keys()]
+pokemon_to_ignore_ids = [int(i) for i in ignored.pokemons_to_ignore.keys()]
 
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -715,7 +717,8 @@ transform_from_wgs_to_gcj(Location(Fort.Latitude, Fort.Longitude))
             "disappear_time": disappear_timestamp,
             "id": poke.pokemon.PokemonId,
             "name": pokename,
-            "is_new": pokemonId not in pokemon_already_captured_ids
+            "is_new": pokemonId not in pokemon_already_captured_ids,
+            "is_ignored": pokemonId in pokemon_to_ignore_ids
         }
 
 def clear_stale_pokemons():
@@ -831,31 +834,32 @@ def get_pokemarkers():
 
     for pokemon_key in pokemons:
         pokemon = pokemons[pokemon_key]
-        datestr = datetime.fromtimestamp(pokemon[
-            'disappear_time'])
-        dateoutput = datestr.strftime("%H:%M:%S")
-        if is_ampm_clock:
-        	dateoutput = datestr.strftime("%I:%M%p").lstrip('0')
-        pokemon['disappear_time_formatted'] = dateoutput
+        if not pokemon["is_ignored"]:
+          datestr = datetime.fromtimestamp(pokemon[
+              'disappear_time'])
+          dateoutput = datestr.strftime("%H:%M:%S")
+          if is_ampm_clock:
+          	dateoutput = datestr.strftime("%I:%M%p").lstrip('0')
+          pokemon['disappear_time_formatted'] = dateoutput
 
-        LABEL_TMPL = u'''
-<div><b>{name}</b><span> - </span><small><a href='http://www.pokemon.com/us/pokedex/{id}' target='_blank' title='View in Pokedex'>#{id}</a></small></div>
-<div>Disappears at - {disappear_time_formatted} <span class='label-countdown' disappears-at='{disappear_time}'></span></div>
-<div><a href='https://www.google.com/maps/dir/Current+Location/{lat},{lng}' target='_blank' title='View in Maps'>Get Directions</a></div>
-'''
-        label = LABEL_TMPL.format(**pokemon)
-        #  NOTE: `infobox` field doesn't render multiple line string in frontend
-        label = label.replace('\n', '')
+          LABEL_TMPL = u'''
+  <div><b>{name}</b><span> - </span><small><a href='http://www.pokemon.com/us/pokedex/{id}' target='_blank' title='View in Pokedex'>#{id}</a></small></div>
+  <div>Disappears at - {disappear_time_formatted} <span class='label-countdown' disappears-at='{disappear_time}'></span></div>
+  <div><a href='https://www.google.com/maps/dir/Current+Location/{lat},{lng}' target='_blank' title='View in Maps'>Get Directions</a></div>
+  '''
+          label = LABEL_TMPL.format(**pokemon)
+          #  NOTE: `infobox` field doesn't render multiple line string in frontend
+          label = label.replace('\n', '')
 
-        pokeMarkers.append({
-            'type': 'pokemon',
-            'key': pokemon_key,
-            'disappear_time': pokemon['disappear_time'],
-            'icon': 'static/icons/%d%s.png' % (pokemon["id"], '' if pokemon["is_new"] else '-fade'),
-            'lat': pokemon["lat"],
-            'lng': pokemon["lng"],
-            'infobox': label
-        })
+          pokeMarkers.append({
+              'type': 'pokemon',
+              'key': pokemon_key,
+              'disappear_time': pokemon['disappear_time'],
+              'icon': 'static/icons/%d%s.png' % (pokemon["id"], '' if pokemon["is_new"] else '-fade'),
+              'lat': pokemon["lat"],
+              'lng': pokemon["lng"],
+              'infobox': label
+          })
 
     for gym_key in gyms:
         gym = gyms[gym_key]
