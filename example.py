@@ -602,23 +602,31 @@ def main():
     dx = 0
     dy = -1
     steplimit2 = steplimit**2
-    for step in range(steplimit2):
-        #starting at 0 index
-        debug('looping: step {} of {}'.format((step+1), steplimit**2))
-        #debug('steplimit: {} x: {} y: {} pos: {} dx: {} dy {}'.format(steplimit2, x, y, pos, dx, dy))
-        # Scan location math
-        if -steplimit2 / 2 < x <= steplimit2 / 2 and -steplimit2 / 2 < y <= steplimit2 / 2:
-            set_location_coords(x * 0.0025 + origin_lat, y * 0.0025 + origin_lon, 0)
+    number_of_steps = steplimit2 * 100
+
+    steps = []
+    for step in range(number_of_steps):
+        steps.append((step, x, y))
         if x == y or x < 0 and x == -y or x > 0 and x == 1 - y:
             (dx, dy) = (-dy, dx)
 
         (x, y) = (x + dx, y + dy)
 
+
+    def process_one_step(step_arguments):
+        step, x, y = step_arguments
+
+        # Scan location math
+        if -steplimit2 / 2 < x <= steplimit2 / 2 and -steplimit2 / 2 < y <= steplimit2 / 2:
+            set_location_coords(x * 0.0025 + origin_lat, y * 0.0025 + origin_lon, 0)
+
         process_step(args, api_endpoint, access_token, profile_response,
                      pokemonsJSON, ignore, only)
 
-        print('Completed: ' + str(
-            ((step+1) + pos * .25 - .25) / (steplimit2) * 100) + '%')
+        print('Completed: ' + str(((step+1) + pos * .25 - .25) / (number_of_steps) * 100) + '%')
+
+    for step_arguments in steps:
+        process_one_step(step_arguments)
 
     global NEXT_LAT, NEXT_LONG
     if (NEXT_LAT and NEXT_LONG and
@@ -636,15 +644,19 @@ def main():
 def process_step(args, api_endpoint, access_token, profile_response,
                  pokemonsJSON, ignore, only):
     print('[+] Searching for Pokemon at location {} {}'.format(FLOAT_LAT, FLOAT_LONG))
+
     origin = LatLng.from_degrees(FLOAT_LAT, FLOAT_LONG)
     step_lat = FLOAT_LAT
     step_long = FLOAT_LONG
     parent = CellId.from_lat_lng(LatLng.from_degrees(FLOAT_LAT,
                                                      FLOAT_LONG)).parent(15)
+
+
     h = get_heartbeat(args.auth_service, api_endpoint, access_token,
                       profile_response)
     hs = [h]
     seen = {}
+
 
     for child in parent.children():
         latlng = LatLng.from_point(Cell(child).get_center())
@@ -706,8 +718,7 @@ transform_from_wgs_to_gcj(Location(Fort.Latitude, Fort.Longitude))
 
 
         pokemonId = poke.pokemon.PokemonId
-        print "found pokemon #", pokemonId
-        print "included:", pokemonId in pokemon_already_captured_ids
+        # print 'found pokemon with id', poke.SpawnPointId, 'out of a total of', len(pokemons.keys())
 
         pokemons[poke.SpawnPointId] = {
             "lat": poke.Latitude,
