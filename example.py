@@ -74,6 +74,10 @@ auto_refresh = 0
 default_step = 0.001
 api_endpoint = None
 pokemons = {}
+currentLocation = {
+    'lat': None,
+    'lng': None,
+}
 gyms = {}
 pokestops = {}
 numbertoteam = {  # At least I'm pretty sure that's it. I could be wrong and then I'd be displaying the wrong owner team of gyms.
@@ -82,7 +86,7 @@ numbertoteam = {  # At least I'm pretty sure that's it. I could be wrong and the
     2: 'Valor',
     3: 'Instinct',
 }
-origin_lat, origin_lon = None, None
+origin_lat, origin_lng = None, None
 is_ampm_clock = False
 
 # stuff for in-background search thread
@@ -174,14 +178,14 @@ def set_location(location_name):
     geolocator = GoogleV3()
     prog = re.compile('^(\-?\d+(\.\d+)?),\s*(\-?\d+(\.\d+)?)$')
     global origin_lat
-    global origin_lon
+    global origin_lng
     if prog.match(location_name):
         local_lat, local_lng = [float(x) for x in location_name.split(",")]
         alt = 0
-        origin_lat, origin_lon = local_lat, local_lng
+        origin_lat, origin_lng = local_lat, local_lng
     else:
         loc = geolocator.geocode(location_name)
-        origin_lat, origin_lon = local_lat, local_lng = loc.latitude, loc.longitude
+        origin_lat, origin_lng = local_lat, local_lng = loc.latitude, loc.longitude
         alt = loc.altitude
         print '[!] Your given location: {}'.format(loc.address.encode('utf-8'))
 
@@ -554,6 +558,7 @@ def login(args):
     return api_endpoint, access_token, profile_response
 
 def main():
+    global currentLocation
     full_path = os.path.realpath(__file__)
     (path, filename) = os.path.split(full_path)
 
@@ -606,29 +611,31 @@ def main():
     steplimit2 = steplimit**2
     number_of_steps = steplimit2 * 100
 
-    steps = []
     for step in range(number_of_steps):
-        steps.append((step, x, y))
-        if x == y or x < 0 and x == -y or x > 0 and x == 1 - y:
-            (dx, dy) = (-dy, dx)
+        currentLocation['lat'] = x * 0.0025 + origin_lat
+        currentLocation['lng'] = y * 0.0025 + origin_lng
 
-        (x, y) = (x + dx, y + dy)
-
-
-    def process_one_step(step_arguments):
-        step, x, y = step_arguments
+        currentLocation = {
+            'lat': x * 0.0025 + origin_lat,
+            'lng': y * 0.0025 + origin_lng
+        }
 
         # Scan location math
         if -steplimit2 / 2 < x <= steplimit2 / 2 and -steplimit2 / 2 < y <= steplimit2 / 2:
-            set_location_coords(x * 0.0025 + origin_lat, y * 0.0025 + origin_lon, 0)
+            set_location_coords(currentLocation['lat'], currentLocation['lng'], 0)
+
 
         process_step(args, api_endpoint, access_token, profile_response,
                      pokemonsJSON, ignore, only)
 
         print('Completed: ' + str(((step+1) + pos * .25 - .25) / (number_of_steps) * 100) + '%')
 
-    for step_arguments in steps:
-        process_one_step(step_arguments)
+        # move
+        if x == y or x < 0 and x == -y or x > 0 and x == 1 - y:
+            (dx, dy) = (-dy, dx)
+
+        (x, y) = (x + dx, y + dy)
+
 
     global NEXT_LAT, NEXT_LONG
     if (NEXT_LAT and NEXT_LONG and
@@ -638,7 +645,7 @@ def main():
         NEXT_LAT = 0
         NEXT_LONG = 0
     else:
-        set_location_coords(origin_lat, origin_lon, 0)
+        set_location_coords(origin_lat, origin_lng, 0)
 
     register_background_thread()
 
@@ -836,12 +843,22 @@ def get_pokemarkers():
     pokeMarkers = [{
         'icon': icons.dots.red,
         'lat': origin_lat,
-        'lng': origin_lon,
+        'lng': origin_lng,
         'infobox': "Start position",
         'type': 'custom',
         'key': 'start-position',
         'disappear_time': -1
     }]
+
+    if currentLocation['lat'] is not None:
+        pokeMarkers.append({
+            'icon': 'static/icons/sacha.png',
+            'lat': currentLocation['lat'],
+            'lng': currentLocation['lng'],
+            'infobox': "Current position",
+            'type': 'custom',
+            'key': 'current-position',
+        })
 
     for pokemon_key in pokemons:
         pokemon = pokemons[pokemon_key]
@@ -923,7 +940,7 @@ def get_map():
         identifier="fullmap2",
         style='height:100%;width:100%;top:0;left:0;position:absolute;z-index:200;',
         lat=origin_lat,
-        lng=origin_lon,
+        lng=origin_lng,
         markers=get_pokemarkers(),
         zoom='15', )
     return fullmap
