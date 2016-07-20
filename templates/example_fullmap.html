@@ -147,7 +147,7 @@
                 var json_obj = $.parseJSON(response);
                 var now = new Date();
                 
-                for (var index in json_obj) {
+                function addOneItemToTheMap(item) {
                     var item = json_obj[index];
                     var key = item["type"]+item["key"];
                     if(Object.keys(markerCache).indexOf(key) >= 0){
@@ -166,7 +166,7 @@
                             needs_replacing = true;
 						}
                         if(!needs_replacing){
-                            continue;
+                            return;
                         }
                     }
                     if(markerCache[key] != null && markerCache[key].marker != null){
@@ -180,17 +180,35 @@
                         } else {
                             disappearsAt = new Date(parseInt(item["disappear_time"] * 1000)) - now;
                             if(disappearsAt < 0){
-                                continue;
+                                return;
                             }
                         }
                     } else {
                         disappearsAt = {{ auto_refresh }} + 500;
                     }
-                    var marker = addMarker({
-                            position: new google.maps.LatLng(item["lat"], item["lng"]),
-                            map: map,
-                            icon: item["icon"],
+                    var markerOptions = {
+                        position: new google.maps.LatLng(item["lat"], item["lng"]),
+                        map: map,
+                        icon: item["icon"],
+                    };
+
+                    if (item['key'] === 'start-position') {
+                        // make the marker draggable
+                        markerOptions.draggable = true;
+                    }
+                    var marker = addMarker(markerOptions);
+                    if (item['key'] === 'start-position') {
+                        // listen to drag end
+                        google.maps.event.addListener(marker, 'dragend', function() 
+                        {
+                            var pos = marker.getPosition();
+                            marker.setMap(null);
+                            delete markerCache[key];
+                            $.get('/set_origin?lat='+pos.lat()+'&lon='+pos.lng())
+
                         });
+                    }
+
                     markerCache[key] = {item: item, marker: marker};
 
                     if (item["infobox"]) {
@@ -218,6 +236,9 @@
                         }
                         _marker.key = key;
                     })(marker, disappearsAt);
+                };
+                for (var index in json_obj) {
+                    addOneItemToTheMap(index);
                 }
                 // deleteMarkers(markers.Length - json_obj.length);
             })

@@ -87,6 +87,12 @@ numbertoteam = {  # At least I'm pretty sure that's it. I could be wrong and the
     3: 'Instinct',
 }
 origin_lat, origin_lng = None, None
+STEP_SIZE = 0.0025
+pos = 1
+x = 0
+y = 0
+dx = 0
+dy = -1
 is_ampm_clock = False
 
 # stuff for in-background search thread
@@ -558,7 +564,8 @@ def login(args):
     return api_endpoint, access_token, profile_response
 
 def main():
-    global currentLocation
+    global currentLocation, pos, x, y, dx, dy
+
     full_path = os.path.realpath(__file__)
     (path, filename) = os.path.split(full_path)
 
@@ -603,22 +610,13 @@ def main():
     elif args.only:
         only = [i.lower().strip() for i in args.only.split(',')]
 
-    pos = 1
-    x = 0
-    y = 0
-    dx = 0
-    dy = -1
     steplimit2 = steplimit**2
-    number_of_steps = steplimit2 * 100
+    N_LOOPS = 100
+    number_of_steps = steplimit2 * N_LOOPS
 
     for step in range(number_of_steps):
-        currentLocation['lat'] = x * 0.0025 + origin_lat
-        currentLocation['lng'] = y * 0.0025 + origin_lng
-
-        currentLocation = {
-            'lat': x * 0.0025 + origin_lat,
-            'lng': y * 0.0025 + origin_lng
-        }
+        currentLocation['lat'] = x * STEP_SIZE + origin_lat
+        currentLocation['lng'] = y * STEP_SIZE + origin_lng
 
         # Scan location math
         if -steplimit2 / 2 < x <= steplimit2 / 2 and -steplimit2 / 2 < y <= steplimit2 / 2:
@@ -635,6 +633,12 @@ def main():
             (dx, dy) = (-dy, dx)
 
         (x, y) = (x + dx, y + dy)
+        if step % N_LOOPS == 0:
+            pos = 1
+            x = 0
+            y = 0
+            dx = 0
+            dy = -1
 
 
     global NEXT_LAT, NEXT_LONG
@@ -838,6 +842,24 @@ def next_loc():
         NEXT_LONG = float(lon)
         return 'ok'
 
+@app.route('/set_origin')
+def set_origin():
+    global origin_lat, origin_lng, pos, x, y, dx, dy
+
+    lat = flask.request.args.get('lat', '')
+    lon = flask.request.args.get('lon', '')
+    if not (lat and lon):
+        print('[-] Invalid next location: %s,%s' % (lat, lon))
+    else:
+        print('[+] Saved next location as %s,%s' % (lat, lon))
+        origin_lat = float(lat)
+        origin_lng = float(lon)
+        pos = 1
+        x = 0
+        y = 0
+        dx = 0
+        dy = -1
+        return 'ok'
 
 def get_pokemarkers():
     pokeMarkers = [{
