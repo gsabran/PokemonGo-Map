@@ -88,6 +88,7 @@ numbertoteam = {  # At least I'm pretty sure that's it. I could be wrong and the
 }
 origin_lat, origin_lng = None, None
 STEP_SIZE = 0.001
+SLEEP_DELAY = 1.0
 pos = 1
 x = 0
 y = 0
@@ -177,7 +178,7 @@ def retrying_set_location(location_name):
             debug(
                 'retrying_set_location: geocoder exception ({}), retrying'.format(
                     str(e)))
-        # time.sleep(0.25)
+        time.sleep(SLEEP_DELAY / 4)
 
 
 def set_location(location_name):
@@ -224,7 +225,7 @@ def retrying_api_req(service, api_endpoint, access_token, *args, **kwargs):
         except (InvalidURL, ConnectionError, DecodeError), e:
             debug('retrying_api_req: request error ({}), retrying'.format(
                 str(e)))
-        # time.sleep(0.1)
+        time.sleep(SLEEP_DELAY / 10)
 
 
 def api_req(service, api_endpoint, access_token, *args, **kwargs):
@@ -265,7 +266,7 @@ def api_req(service, api_endpoint, access_token, *args, **kwargs):
         print '''
 
 '''
-    # time.sleep(0.051)
+    time.sleep(0.05)
     return p_ret
 
 
@@ -740,6 +741,7 @@ transform_from_wgs_to_gcj(Location(Fort.Latitude, Fort.Longitude))
             "id": poke.pokemon.PokemonId,
             "name": pokename,
         }
+    time.sleep(SLEEP_DELAY)
 
 def clear_stale_pokemons():
     current_time = time.time()
