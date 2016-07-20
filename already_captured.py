@@ -148,9 +148,9 @@ pokemons_already_captured = {
   # "144": "Artikodin",
   # "145": "Électhor",
   # "146": "Sulfura",
-  "147": "Minidraco",
-  "148": "Draco",
-  "149": "Dracolosse",
-  "150": "Mewtwo",
-  "151": "Mew"
+  # "147": "Minidraco",
+  # "148": "Draco",
+  # "149": "Dracolosse",
+  # "150": "Mewtwo",
+  # "151": "Mew"
 }
