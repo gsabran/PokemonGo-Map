@@ -25,6 +25,21 @@
   <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ key }}"></script> -->
 
   <script type="text/javascript">
+    // desktop notifications
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+    var pokemonAlreadyNotifiedFor = [];
+    var createNotificationIfNotDoneAlready = function(pokemon) {
+        if (pokemonAlreadyNotifiedFor.indexOf(pokemon.key) !== -1) {
+            return;
+        }
+        pokemonAlreadyNotifiedFor.push(pokemon.key);
+        new Notification(pokemon.name + ' found!', {
+            icon: pokemon.icon,
+        });
+    }
+
     var currentFilter = '1';
 
     var map = null;
@@ -125,6 +140,9 @@
 
             if (currentFilter !== 'all' && !item.is_new && !(currentFilter === '1' && !item.is_very_common)) {
                 return;
+            }
+            if (item.is_new) {
+                createNotificationIfNotDoneAlready(item);
             }
         }
 

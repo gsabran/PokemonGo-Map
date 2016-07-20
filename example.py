@@ -910,6 +910,7 @@ def get_pokemarkers():
             'lng': pokemon["lng"],
             'infobox': label,
             'id': pokemon["id"],
+            'name': pokemon["name"],
             'is_new': pokemon_is_new,
             'is_very_common': pokemon_is_very_common,
         })
