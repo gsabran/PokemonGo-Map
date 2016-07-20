@@ -4,6 +4,7 @@
             <meta charset="utf-8">
             <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" type="text/css" href="/static/style/main.css">
             <title>Flask Google Maps Full Map Example</title>
     </head>
     <body>
@@ -12,7 +13,10 @@
             {{ fullmap.html }}
 
         </div>
-        
+        <div class="menu">
+            <div><input type="checkbox" id="1" onChange="handleSelectionChange('1');" checked="checked"/> level 1 </div>
+            <div><input type="checkbox" id="2" onChange="handleSelectionChange('2');"/> level 2 </div>
+        </div>
 
     </body>
 {{ fullmap.js }}
@@ -21,6 +25,70 @@
   <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ key }}"></script> -->
 
   <script type="text/javascript">
+    var currentFilter = '1';
+
+    var map = null;
+    var markers = [];
+    var markerCache = {};
+    var registeredMarkers = [];
+    var allPokemons = {};
+
+    var handleSelectionChange = function(id) {
+        var allFilters = ['1', '2'];
+        allFilters.forEach(function(otherId) {
+            if (otherId !== id) {
+                $('#'+otherId).prop('checked', false);
+            }
+        });
+        if ($('#'+id).is(':checked') && currentFilter !== id) {
+            setFilter(id)
+        } else {
+            setFilter('all');
+        }
+    };
+    var setFilter = function(newFilter) {
+        currentFilter = newFilter;
+
+        // remove all pokemon markers
+        var toBeRemoved = [];
+        var markersToBeRemoved = [];
+        for (var key in markerCache) {
+            var cachedMarker = markerCache[key];
+            if (cachedMarker.item.type === 'pokemon') {
+                cachedMarker.marker.setMap(null);
+                toBeRemoved.push(key);
+                markersToBeRemoved.push(markers.indexOf(cachedMarker.marker));
+            }
+        }
+        toBeRemoved.forEach(function(key) {
+            delete markerCache[key];
+        });
+        markersToBeRemoved.sort(function(a, b) { return b - a; }).forEach(function(idx) {
+            if (idx === -1) { return; }
+            markers.splice(idx, 1);
+        });
+
+        // remove dead pokemons
+        toBeRemoved = [];
+        var now = new Date();
+        for (var key in allPokemons) {
+            var disappearsAt = new Date(parseInt(allPokemons[key]["disappear_time"] * 1000)) - now;
+            if (disappearsAt < now){
+                toBeRemoved.push(key);
+            }
+        }
+        toBeRemoved.forEach(function(key) {
+            delete allPokemons[key];
+        });
+
+        for (var key in allPokemons) {
+            var pokemon = allPokemons[key];
+            if (currentFilter === 'all' || pokemon.is_new || (currentFilter === '1' && !pokemon.is_very_common)) {
+                addOneItemToTheMap(allPokemons[key]);
+            }
+        }
+    };
+
     var setLabelTime = function(){
         $('.label-countdown').each(function (index, element) {
             var disappearsAt = new Date(parseInt(element.getAttribute("disappears-at"))*1000);
@@ -50,15 +118,111 @@
 
     window.setInterval(setLabelTime, 1000);
 
-  
-  </script>
-  {% if auto_refresh %}
-    <script type="text/javascript">
+    function addOneItemToTheMap(item) {
+        var now = new Date();
+        if (item.type === 'pokemon') {
+            allPokemons[item.key] = item;
+
+            if (currentFilter !== 'all' && !item.is_new && !(currentFilter === '1' && !item.is_very_common)) {
+                return;
+            }
+        }
+
+        var key = item["type"]+item["key"];
+        if(Object.keys(markerCache).indexOf(key) >= 0){
+            var needs_replacing = false;
+            if(item["type"] == "gym" && item["icon"] != markerCache[key].item.icon){
+                (function(_marker){setTimeout(_marker.setMap(null), 500)})(markerCache[key].marker);
+                needs_replacing = true;
+            }
+            if((markerCache[key].item.lat != item["lat"] || markerCache[key].item.lng != item['lng'])){
+
+                console.log("Warning: object with identical key has different coordinates please report bug", key);
+                needs_replacing = true;
+            }
+            if (markerCache[key].item.type != item["type"] || (item["infobox"] != null && markerCache[key].item["infobox"] != null && item["infobox"] != markerCache[key].item["infobox"])) {
+                (function(_marker){setTimeout(_marker.setMap(null), 500)})(markerCache[key].marker);
+                needs_replacing = true;
+            }
+            if(!needs_replacing){
+                return;
+            }
+        }
+        if(markerCache[key] != null && markerCache[key].marker != null){
+            markerCache[key].marker.setMap(null);
+        }
+        var disappearsAt;
+
+        if(item["disappear_time"] != null){
+            if(parseInt(item["disappear_time"]) < 0){
+                disappearsAt = -1;
+            } else {
+                disappearsAt = new Date(parseInt(item["disappear_time"] * 1000)) - now;
+                if(disappearsAt < 0){
+                    return;
+                }
+            }
+        } else {
+            disappearsAt = {{ auto_refresh }} + 500;
+        }
+        var markerOptions = {
+            position: new google.maps.LatLng(item["lat"], item["lng"]),
+            map: map,
+            icon: item["icon"],
+        };
+
+        if (item['key'] === 'start-position') {
+            // make the marker draggable
+            markerOptions.draggable = true;
+        }
+        var marker = addMarker(markerOptions);
+        if (item['key'] === 'start-position') {
+            // listen to drag end
+            google.maps.event.addListener(marker, 'dragend', function() 
+            {
+                var pos = marker.getPosition();
+                marker.setMap(null);
+                delete markerCache[key];
+                $.get('/set_origin?lat='+pos.lat()+'&lon='+pos.lng())
+
+            });
+        }
+        if (item['key'] !== 'current-position') {
+            markerCache[key] = {item: item, marker: marker};
+        } else {
+            currentPositionMarker = marker;
+        }
+
+        if (item["infobox"]) {
+            (function(_infobox, _map, _marker){
+                _marker.infoWindow = new google.maps.InfoWindow({
+                    content: _infobox
+                });
+                _marker.addListener('click', function() {
+                    _marker.infoWindow.open(_map, _marker);
+                    _marker["persist"] = true;
+                });
+
+                google.maps.event.addListener(_marker.infoWindow,'closeclick',function(){
+                   _marker["persist"] = null;
+                });
+            })(item["infobox"], map, marker);
+        }
+
+        (function(_marker, _disappearsAt){
+            if(_disappearsAt < 0){
+
+            } else {
+                var timeout = setTimeout(function(){_marker.setMap(null);}, Math.ceil(_disappearsAt))
+                _marker.timeout = timeout;
+            }
+            _marker.key = key;
+        })(marker, disappearsAt);
+    };
+
+    {% if auto_refresh %}
         var baseURL = location.protocol + "//" + location.hostname + (location.port ? ":"+location.port: "");
         var options = {};
-        var map = null;
-        var markers = [];
-        var markerCache = {};
         var currentPositionMarker;
         // Adds a marker to the map and push to the array.
         function addMarker(options = {}) {
@@ -146,107 +310,13 @@
             // Requests the data and populates the map
             $.get(baseURL + "/data", function(response){
                 var json_obj = $.parseJSON(response);
-                var now = new Date();
 
                 if (currentPositionMarker) {
                     currentPositionMarker.setMap(null);
                 }
-                
-                function addOneItemToTheMap(item) {
-                    var item = json_obj[index];
-                    var key = item["type"]+item["key"];
-                    if(Object.keys(markerCache).indexOf(key) >= 0){
-                        var needs_replacing = false;
-                        if(item["type"] == "gym" && item["icon"] != markerCache[key].item.icon){
-                            (function(_marker){setTimeout(_marker.setMap(null), 500)})(markerCache[key].marker);
-                            needs_replacing = true;
-                        }
-                        if((markerCache[key].item.lat != item["lat"] || markerCache[key].item.lng != item['lng'])){
 
-                            console.log("Warning: object with identical key has different coordinates please report bug", key);
-                            needs_replacing = true;
-                        }
-                        if (markerCache[key].item.type != item["type"] || (item["infobox"] != null && markerCache[key].item["infobox"] != null && item["infobox"] != markerCache[key].item["infobox"])) {
-                            (function(_marker){setTimeout(_marker.setMap(null), 500)})(markerCache[key].marker);
-                            needs_replacing = true;
-						}
-                        if(!needs_replacing){
-                            return;
-                        }
-                    }
-                    if(markerCache[key] != null && markerCache[key].marker != null){
-                        markerCache[key].marker.setMap(null);
-                    }
-                    var disappearsAt;
-
-                    if(item["disappear_time"] != null){
-                        if(parseInt(item["disappear_time"]) < 0){
-                            disappearsAt = -1;
-                        } else {
-                            disappearsAt = new Date(parseInt(item["disappear_time"] * 1000)) - now;
-                            if(disappearsAt < 0){
-                                return;
-                            }
-                        }
-                    } else {
-                        disappearsAt = {{ auto_refresh }} + 500;
-                    }
-                    var markerOptions = {
-                        position: new google.maps.LatLng(item["lat"], item["lng"]),
-                        map: map,
-                        icon: item["icon"],
-                    };
-
-                    if (item['key'] === 'start-position') {
-                        // make the marker draggable
-                        markerOptions.draggable = true;
-                    }
-                    var marker = addMarker(markerOptions);
-                    if (item['key'] === 'start-position') {
-                        // listen to drag end
-                        google.maps.event.addListener(marker, 'dragend', function() 
-                        {
-                            var pos = marker.getPosition();
-                            marker.setMap(null);
-                            delete markerCache[key];
-                            $.get('/set_origin?lat='+pos.lat()+'&lon='+pos.lng())
-
-                        });
-                    }
-                    if (item['key'] !== 'current-position') {
-                        markerCache[key] = {item: item, marker: marker};
-                    } else {
-                        currentPositionMarker = marker;
-                    }
-
-                    if (item["infobox"]) {
-                        (function(_infobox, _map, _marker){
-                            _marker.infoWindow = new google.maps.InfoWindow({
-                                content: _infobox
-                            });
-                            _marker.addListener('click', function() {
-                                _marker.infoWindow.open(_map, _marker);
-                                _marker["persist"] = true;
-                            });
-
-                            google.maps.event.addListener(_marker.infoWindow,'closeclick',function(){
-                               _marker["persist"] = null;
-                            });
-                        })(item["infobox"], map, marker);
-                    }
-
-                    (function(_marker, _disappearsAt){
-                        if(_disappearsAt < 0){
-
-                        } else {
-                            var timeout = setTimeout(function(){_marker.setMap(null);}, Math.ceil(_disappearsAt))
-                            _marker.timeout = timeout;
-                        }
-                        _marker.key = key;
-                    })(marker, disappearsAt);
-                };
                 for (var index in json_obj) {
-                    addOneItemToTheMap(index);
+                    addOneItemToTheMap(json_obj[index]);
                 }
                 // deleteMarkers(markers.Length - json_obj.length);
             })
