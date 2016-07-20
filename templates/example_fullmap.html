@@ -59,6 +59,7 @@
         var map = null;
         var markers = [];
         var markerCache = {};
+        var currentPositionMarker;
         // Adds a marker to the map and push to the array.
         function addMarker(options = {}) {
             var default_options = {map: map}
@@ -146,6 +147,10 @@
             $.get(baseURL + "/data", function(response){
                 var json_obj = $.parseJSON(response);
                 var now = new Date();
+
+                if (currentPositionMarker) {
+                    currentPositionMarker.setMap(null);
+                }
                 
                 function addOneItemToTheMap(item) {
                     var item = json_obj[index];
@@ -208,8 +213,11 @@
 
                         });
                     }
-
-                    markerCache[key] = {item: item, marker: marker};
+                    if (item['key'] !== 'current-position') {
+                        markerCache[key] = {item: item, marker: marker};
+                    } else {
+                        currentPositionMarker = marker;
+                    }
 
                     if (item["infobox"]) {
                         (function(_infobox, _map, _marker){
