@@ -18,6 +18,7 @@ import threading
 import werkzeug.serving
 import pokemon_pb2
 import time
+import already_captured
 from google.protobuf.internal import encoder
 from google.protobuf.message import DecodeError
 from s2sphere import *
@@ -29,6 +30,10 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from requests.adapters import ConnectionError
 from requests.models import InvalidURL
 from transform import *
+
+# load the list of pokemons already captured
+pokemon_already_captured_ids = [int(i) for i in already_captured.pokemons_already_captured.keys()]
+
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -160,7 +165,7 @@ def retrying_set_location(location_name):
             debug(
                 'retrying_set_location: geocoder exception ({}), retrying'.format(
                     str(e)))
-        time.sleep(1.25)
+        # time.sleep(0.25)
 
 
 def set_location(location_name):
@@ -207,7 +212,7 @@ def retrying_api_req(service, api_endpoint, access_token, *args, **kwargs):
         except (InvalidURL, ConnectionError, DecodeError), e:
             debug('retrying_api_req: request error ({}), retrying'.format(
                 str(e)))
-        time.sleep(1)
+        # time.sleep(0.1)
 
 
 def api_req(service, api_endpoint, access_token, *args, **kwargs):
@@ -248,7 +253,7 @@ def api_req(service, api_endpoint, access_token, *args, **kwargs):
         print '''
 
 '''
-    time.sleep(0.51)
+    # time.sleep(0.051)
     return p_ret
 
 
@@ -699,12 +704,18 @@ transform_from_wgs_to_gcj(Location(Fort.Latitude, Fort.Longitude))
                 transform_from_wgs_to_gcj(Location(poke.Latitude,
                     poke.Longitude))
 
+
+        pokemonId = poke.pokemon.PokemonId
+        print "found pokemon #", pokemonId
+        print "included:", pokemonId in pokemon_already_captured_ids
+
         pokemons[poke.SpawnPointId] = {
             "lat": poke.Latitude,
             "lng": poke.Longitude,
             "disappear_time": disappear_timestamp,
             "id": poke.pokemon.PokemonId,
-            "name": pokename
+            "name": pokename,
+            "is_new": pokemonId not in pokemon_already_captured_ids
         }
 
 def clear_stale_pokemons():
@@ -840,7 +851,7 @@ def get_pokemarkers():
             'type': 'pokemon',
             'key': pokemon_key,
             'disappear_time': pokemon['disappear_time'],
-            'icon': 'static/icons/%d.png' % pokemon["id"],
+            'icon': 'static/icons/%d%s.png' % (pokemon["id"], '' if pokemon["is_new"] else '-fade'),
             'lat': pokemon["lat"],
             'lng': pokemon["lng"],
             'infobox': label
