@@ -32,18 +32,16 @@ from requests.models import InvalidURL
 from transform import *
 
 # load the list of pokemons already captured
-pokemons_already_captured = {}
-if os.access("already_captured.json", os.R_OK):
-    with open('already_captured.json') as f:
-        pokemons_already_captured = commentjson.loads(f.read())
-pokemon_already_captured_ids = [int(i) for i in pokemons_already_captured.keys()]
+def loadPreference(fileName):
+    if os.access("preferences/" + fileName, os.R_OK):
+        with open("preferences/" + fileName) as f:
+            return commentjson.loads(f.read())
+    if os.access("preferences/default_" + fileName, os.R_OK):
+        with open("preferences/default_" + fileName) as f:
+            return commentjson.loads(f.read())
 
-pokemons_to_ignore = {}
-if os.access("ignored.json", os.R_OK):
-    with open('ignored.json') as f:
-        pokemons_to_ignore = commentjson.loads(f.read())
-pokemon_to_ignore_ids = [int(i) for i in pokemons_to_ignore.keys()]
-
+pokemons_already_captured = loadPreference("pokemons_already_captured.json")
+pokemons_to_ignore = loadPreference("pokemons_to_be_ignored.json")
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
