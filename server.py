@@ -18,8 +18,7 @@ import threading
 import werkzeug.serving
 import pokemon_pb2
 import time
-import already_captured
-import ignored
+import commentjson
 from google.protobuf.internal import encoder
 from google.protobuf.message import DecodeError
 from s2sphere import *
@@ -33,8 +32,17 @@ from requests.models import InvalidURL
 from transform import *
 
 # load the list of pokemons already captured
-pokemon_already_captured_ids = [int(i) for i in already_captured.pokemons_already_captured.keys()]
-pokemon_to_ignore_ids = [int(i) for i in ignored.pokemons_to_ignore.keys()]
+pokemons_already_captured = {}
+if os.access("already_captured.json", os.R_OK):
+    with open('already_captured.json') as f:
+        pokemons_already_captured = commentjson.loads(f.read())
+pokemon_already_captured_ids = [int(i) for i in pokemons_already_captured.keys()]
+
+pokemons_to_ignore = {}
+if os.access("ignored.json", os.R_OK):
+    with open('ignored.json') as f:
+        pokemons_to_ignore = commentjson.loads(f.read())
+pokemon_to_ignore_ids = [int(i) for i in pokemons_to_ignore.keys()]
 
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)

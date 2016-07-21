@@ -1,4 +1,4 @@
 *.pyc
 .idea
-already_captured.py
-ignored.py
+already_captured.json
+ignored.json
