@@ -612,10 +612,9 @@ def main():
         only = [i.lower().strip() for i in args.only.split(',')]
 
     steplimit2 = steplimit**2
-    N_LOOPS = 100
-    number_of_steps = steplimit2 * N_LOOPS
 
-    for step in range(number_of_steps):
+    step = 0
+    while step < steplimit2:
         currentLocation['lat'] = x * STEP_SIZE + origin_lat
         currentLocation['lng'] = y * STEP_SIZE + origin_lng
 
@@ -627,19 +626,21 @@ def main():
         process_step(args, api_endpoint, access_token, profile_response,
                      pokemonsJSON, ignore, only)
 
-        print('Completed: ' + str(((step+1) + pos * .25 - .25) / (number_of_steps) * 100) + '%')
+        print('Completed: ' + str(((step+1) + pos * .25 - .25) / (steplimit2) * 100) + '%')
 
         # move
         if x == y or x < 0 and x == -y or x > 0 and x == 1 - y:
             (dx, dy) = (-dy, dx)
 
         (x, y) = (x + dx, y + dy)
-        if step % N_LOOPS == 0:
+        step += 1
+        if step == steplimit2:
             pos = 1
             x = 0
             y = 0
             dx = 0
             dy = -1
+            step = 0
 
 
     global NEXT_LAT, NEXT_LONG
