@@ -464,11 +464,11 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-a', '--auth_service', type=str.lower, help='Auth Service', default='ptc')
-    parser.add_argument('-u', '--username', help='Username', required=False, default=os.environ.get('POK_USERNAME'))
-    parser.add_argument('-p', '--password', help='Password', required=False, default=os.environ.get('POK_PSW'))
+    parser.add_argument('-u', '--username', help='Username', required=True)
+    parser.add_argument('-p', '--password', help='Password', required=True)
     parser.add_argument(
-        '-l', '--location', type=parse_unicode, help='Location', required=False, default=os.environ.get('37.7703359 -122.4356853'))
-    parser.add_argument('-st', '--step-limit', help='Steps', required=False, default=os.environ.get('POK_STEP_LINIT'))
+        '-l', '--location', type=parse_unicode, help='Location', required=True)
+    parser.add_argument('-st', '--step-limit', help='Steps', required=True)
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument(
         '-i', '--ignore', help='Comma-separated list of Pokémon names or IDs to ignore')
