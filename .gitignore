@@ -1,4 +1,4 @@
 *.pyc
 .idea
-already_captured.py
-ignored.py
+preferences/*
+!preferences/default_*

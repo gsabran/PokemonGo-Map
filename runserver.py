@@ -18,8 +18,7 @@ import threading
 import werkzeug.serving
 import pokemon_pb2
 import time
-import already_captured
-import ignored
+import commentjson
 from google.protobuf.internal import encoder
 from google.protobuf.message import DecodeError
 from s2sphere import *
@@ -33,9 +32,18 @@ from requests.models import InvalidURL
 from transform import *
 
 # load the list of pokemons already captured
-pokemon_already_captured_ids = [int(i) for i in already_captured.pokemons_already_captured.keys()]
-pokemon_to_ignore_ids = [int(i) for i in ignored.pokemons_to_ignore.keys()]
+def loadPreference(fileName):
+    if os.access("preferences/" + fileName, os.R_OK):
+        with open("preferences/" + fileName) as f:
+            return commentjson.loads(f.read())
+    if os.access("preferences/default_" + fileName, os.R_OK):
+        with open("preferences/default_" + fileName) as f:
+            return commentjson.loads(f.read())
 
+pokemons_already_captured = loadPreference("pokemons_already_captured.json")
+pokemon_already_captured_ids = [int(i) for i in pokemons_already_captured.keys()]
+pokemons_to_ignore = loadPreference("pokemons_to_be_ignored.json")
+pokemon_to_ignore_ids = [int(i) for i in pokemons_to_ignore.keys()]
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -52,7 +60,9 @@ PTC_CLIENT_SECRET = credentials.get('ptc_client_secret', None)
 ANDROID_ID = credentials.get('android_id', None)
 SERVICE = credentials.get('service', None)
 CLIENT_SIG = credentials.get('client_sig', None)
-GOOGLEMAPS_KEY = credentials.get('gmaps_key', None)
+GOOGLEMAPS_KEY = os.environ.get('POK_GMAP_KEY')
+if GOOGLEMAPS_KEY is None:
+    GOOGLEMAPS_KEY = credentials.get('gmaps_key', None)
 
 SESSION = requests.session()
 SESSION.headers.update({'User-Agent': 'Niantic App'})
@@ -457,7 +467,7 @@ def get_args():
     parser.add_argument(
         '-a', '--auth_service', type=str.lower, help='Auth Service', default='ptc')
     parser.add_argument('-u', '--username', help='Username', required=True)
-    parser.add_argument('-p', '--password', help='Password', required=False)
+    parser.add_argument('-p', '--password', help='Password', required=True)
     parser.add_argument(
         '-l', '--location', type=parse_unicode, help='Location', required=True)
     parser.add_argument('-st', '--step-limit', help='Steps', required=True)
@@ -612,10 +622,9 @@ def main():
         only = [i.lower().strip() for i in args.only.split(',')]
 
     steplimit2 = steplimit**2
-    N_LOOPS = 100
-    number_of_steps = steplimit2 * N_LOOPS
 
-    for step in range(number_of_steps):
+    step = 0
+    while step < steplimit2:
         currentLocation['lat'] = x * STEP_SIZE + origin_lat
         currentLocation['lng'] = y * STEP_SIZE + origin_lng
 
@@ -627,19 +636,21 @@ def main():
         process_step(args, api_endpoint, access_token, profile_response,
                      pokemonsJSON, ignore, only)
 
-        print('Completed: ' + str(((step+1) + pos * .25 - .25) / (number_of_steps) * 100) + '%')
+        print('Completed: ' + str(((step+1) + pos * .25 - .25) / (steplimit2) * 100) + '%')
 
         # move
         if x == y or x < 0 and x == -y or x > 0 and x == 1 - y:
             (dx, dy) = (-dy, dx)
 
         (x, y) = (x + dx, y + dy)
-        if step % N_LOOPS == 0:
+        step += 1
+        if step == steplimit2:
             pos = 1
             x = 0
             y = 0
             dx = 0
             dy = -1
+            step = 0
 
 
     global NEXT_LAT, NEXT_LONG
