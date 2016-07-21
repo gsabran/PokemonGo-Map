@@ -41,7 +41,9 @@ def loadPreference(fileName):
             return commentjson.loads(f.read())
 
 pokemons_already_captured = loadPreference("pokemons_already_captured.json")
+pokemon_already_captured_ids = [int(i) for i in pokemons_already_captured.keys()]
 pokemons_to_ignore = loadPreference("pokemons_to_be_ignored.json")
+pokemon_to_ignore_ids = [int(i) for i in pokemons_to_ignore.keys()]
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
