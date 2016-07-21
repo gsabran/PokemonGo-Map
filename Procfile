@@ -1,1 +1,1 @@
-web: python runserver.py -u "$POK_USERNAME" -p "$POK_PSW" -l "$POK_LOCATION" -st $POK_STEP_LINIT $EXTRA_ARGS -H 0.0.0.0 -P $PORT
+web: python runserver.py -u "$POK_USERNAME" -p "$POK_PSW" -l "$POK_LOCATION" -st $POK_STEP_LINIT $EXTRA_ARGS -H 0.0.0.0 -P $PORT -ar 1
