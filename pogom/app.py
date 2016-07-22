@@ -7,7 +7,7 @@ from flask.json import JSONEncoder
 from datetime import datetime
 
 from . import config
-from .models import Pokemon, Gym, Pokestop
+from .models import Pokemon, Gym, Pokestop, Player
 
 
 class Pogom(Flask):
@@ -34,6 +34,7 @@ class Pogom(Flask):
 
         if request.args.get('gyms', 'true') == 'true':
             d['gyms'] = Gym.get_all()
+        d['players'] = Player.get_all()
 
         return jsonify(d)
 

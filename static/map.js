@@ -141,6 +141,7 @@ function gymLabel(team_name, team_id, gym_points) {
 map_pokemons = {} // Pokemon
 map_gyms = {} // Gyms
 map_pokestops = {} // Pokestops
+map_players = {} // Players
 var gym_types = ["Uncontested", "Mystic", "Valor", "Instinct"];
 
 function setupPokemonMarker(item) {
@@ -297,6 +298,7 @@ function updateMap() {
             }
 
         });
+        console.log('players', result.players);
 
         clearStaleMarkers();
     });

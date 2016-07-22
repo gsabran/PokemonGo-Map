@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     args = get_args()
     fake_args = FakeArgs({
-        'location': '37.5543635 -122.3209089',
+        'location': '37.7512063 -122.4142236',
         'username': os.environ.get('POK_SEC_EMAIL'),
         'password': os.environ.get('POK_SEC_PSW'),
         'auth_service': 'google',

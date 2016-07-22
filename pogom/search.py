@@ -3,6 +3,7 @@
 
 import logging
 import time
+from datetime import datetime
 
 from pgoapi.utilities import f2i, get_cellid, get_pos_by_name
 from models import Player
@@ -56,14 +57,19 @@ def login(args, position):
 
 def set_player_position(args, latitude, longitude):
     player_id = args.username + args.auth_service
+    print('len(Player.select().where(Player.player_id == player_id))', len(Player.select().where(Player.player_id == player_id)))
     if len(Player.select().where(Player.player_id == player_id)) == 0:
-        Player.insert(
+        start_position = get_pos_by_name(args.location)
+        start_position = (start_position[0], start_position[1], 0)
+        Player.create(
             player_id=player_id,
             name=args.username,
-            enabled=true,
+            enabled=True,
             latitude=latitude,
             longitude=longitude,
-            last_modified=datetime.now()
+            last_modified=datetime.now(),
+            start_latitude=start_position[0],
+            start_longitude=start_position[1]
         )
     else:
         Player.update(
@@ -71,6 +77,7 @@ def set_player_position(args, latitude, longitude):
             longitude=longitude,
             last_modified=datetime.now()
         ).where(Player.player_id == player_id)
+    print('len(Player.select().where(Player.player_id == player_id))', len(Player.select().where(Player.player_id == player_id)))
 
 def search(args):
     global failed_consecutive

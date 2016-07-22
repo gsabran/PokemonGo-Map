@@ -64,6 +64,8 @@ class Player(BaseModel):
     enabled = BooleanField()
     latitude = FloatField()
     longitude = FloatField()
+    start_latitude = FloatField()
+    start_longitude = FloatField()
     last_modified = DateTimeField()
 
 class Gym(BaseModel):
