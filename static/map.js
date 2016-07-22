@@ -62,12 +62,31 @@ var pGoStyle=[{"featureType":"landscape.man_made","elementType":"geometry.fill",
 var selectedStyle = 'light';
 
 function initMap() {
+    var mapCenter = {   
+        lat: parseFloat(localStorage['map_lat']) || center_lat,
+        lng: parseFloat(localStorage['map_lng']) || center_lng
+    };
+    var zoom = 16;
+    try {
+        var lat = parseFloat(localStorage['map_lat']);
+        var lng = parseFloat(localStorage['map_lng']);
+        if (lng === lng && lat === lat) {
+            mapCenter = {
+                lat: lat,
+                lng: lng,
+            };
+        }
+    } catch (e) {}
+    try {
+        var _zoom = parseFloat(localStorage['map_zoom']);
+        if (_zoom === _zoom) {
+            zoom = _zoom;
+        }
+    } catch (e) {}
+
     map = new google.maps.Map(document.getElementById('map'), {
-        center: {
-            lat: center_lat,
-            lng: center_lng
-        },
-        zoom: 16,
+        center: mapCenter,
+        zoom: zoom,
         fullscreenControl: true,
         streetViewControl: false,
 		mapTypeControl: true,
@@ -94,6 +113,16 @@ function initMap() {
 
     map.addListener('maptypeid_changed', function(s) {
         localStorage['map_style'] = this.mapTypeId;
+    });
+
+    map.addListener('zoom_changed', function(s) {
+        localStorage['map_zoom'] = map.getZoom();
+    });
+
+    map.addListener('center_changed', function(e) {
+        var center = map.getCenter()
+        localStorage['map_lat'] = center.lat();
+        localStorage['map_lng'] = center.lng();
     });
 
     if (!localStorage['map_style'] || localStorage['map_style'] === 'undefined') {
