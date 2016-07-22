@@ -8,7 +8,7 @@ from threading import Thread
 
 from pogom import config
 from pogom.app import Pogom
-from pogom.utils import get_args, insert_mock_data, load_credentials
+from pogom.utils import get_args, insert_mock_data, load_credentials, FakeArgs
 from pogom.search import search_loop
 from pogom.models import create_tables, Pokemon, Pokestop, Gym
 
@@ -33,6 +33,12 @@ if __name__ == '__main__':
     logging.getLogger("pogom.pgoapi.rpc_api").setLevel(logging.INFO)
 
     args = get_args()
+    fake_args = FakeArgs({
+        'location': '37.5543635 -122.3209089',
+        'username': os.environ.get('POK_SEC_EMAIL'),
+        'password': os.environ.get('POK_SEC_PSW'),
+        'auth_service': 'google',
+    })
 
     if args.debug:
         logging.getLogger("requests").setLevel(logging.DEBUG)
@@ -50,7 +56,9 @@ if __name__ == '__main__':
     config['LOCALE'] = args.locale
 
     if not args.mock:
+        print(args.location)
         start_locator_thread(args)
+        start_locator_thread(fake_args)
     else:
         insert_mock_data()
 

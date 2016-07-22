@@ -43,6 +43,23 @@ def get_args():
 
     return args
 
+class FakeArgs:
+    def __init__(self, params={}):
+        self.auth_service = params['auth_service'] if 'auth_service' in params else 'ptc'
+        self.username = params['username'] if 'username' in params else 'gggsab'
+        self.password = params['password'] if 'password' in params else 'Guigui99'
+        self.location = params['location'] if 'location' in params else '37.7703359 -122.4356853'
+        self.step_limit = params['step_limit'] if 'step_limit' in params else 15
+        self.scan_delay = params['scan_delay'] if 'scan_delay' in params else 1
+        self.host = params['host'] if 'host' in params else '127.0.0.1'
+        self.port = params['port'] if 'port' in params else 5000
+        self.locale = params['locale'] if 'locale' in params else 'en'
+        self.china = params['china'] if 'china' in params else 'store_true'
+        self.debug = params['debug'] if 'debug' in params else 'store_true'
+        self.mock = params['mock'] if 'mock' in params else False
+        self.gmaps_key = params['gmaps_key'] if 'gmaps_key' in params else None
+
+
 def insert_mock_data():
     num_pokemon = 6
     num_pokestop = 6

@@ -5,7 +5,7 @@ import logging
 import time
 
 from pgoapi import PGoApi
-from pgoapi.utilities import f2i, get_cellid
+from pgoapi.utilities import f2i, get_cellid, get_pos_by_name
 
 from . import config
 from .models import parse_map
@@ -56,8 +56,11 @@ def login(args, position):
 
 
 def search(args):
+    global failed_consecutive
     num_steps = args.step_limit
-    position = (config['ORIGINAL_LATITUDE'], config['ORIGINAL_LONGITUDE'], 0)
+
+    position = get_pos_by_name(args.location)
+    position = (position[0], position[1], 0)
 
     if api._auth_provider and api._auth_provider._ticket_expire:
         remaining_time = api._auth_provider._ticket_expire/1000 - time.time()
@@ -72,7 +75,7 @@ def search(args):
     i = 1
     for step_location in generate_location_steps(position, num_steps):
         log.info('Scanning step {:d} of {:d}.'.format(i, num_steps**2))
-        log.debug('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
+        log.info('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
 
         response_dict = send_map_request(api, step_location)
         while not response_dict:

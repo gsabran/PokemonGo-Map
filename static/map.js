@@ -302,7 +302,7 @@ function updateMap() {
     });
 };
 
-window.setInterval(updateMap, 5000);
+window.setInterval(updateMap, 1000);
 updateMap();
 
 document.getElementById('gyms-switch').onclick = function() {
