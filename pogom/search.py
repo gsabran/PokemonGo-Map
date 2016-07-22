@@ -4,8 +4,8 @@
 import logging
 import time
 
-from pgoapi import PGoApi
 from pgoapi.utilities import f2i, get_cellid, get_pos_by_name
+from models import Player
 
 from . import config
 from .models import parse_map
@@ -15,7 +15,6 @@ log = logging.getLogger(__name__)
 TIMESTAMP = '\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000'
 REQ_SLEEP = 1
 failed_consecutive = 0
-api = PGoApi()
 
 
 def send_map_request(api, position):
@@ -45,7 +44,7 @@ def generate_location_steps(initial_location, num_steps):
 
 def login(args, position):
     log.info('Attempting login to Pokemon Go.')
-
+    api = args.api
     api.set_position(*position)
 
     while not api.login(args.auth_service, args.username, args.password):
@@ -55,6 +54,24 @@ def login(args, position):
     log.info('Login to Pokemon Go successful.')
 
 
+def set_player_position(args, latitude, longitude):
+    player_id = args.username + args.auth_service
+    if len(Player.select().where(Player.player_id == player_id)) == 0:
+        Player.insert(
+            player_id=player_id,
+            name=args.username,
+            enabled=true,
+            latitude=latitude,
+            longitude=longitude,
+            last_modified=datetime.now()
+        )
+    else:
+        Player.update(
+            latitude=latitude,
+            longitude=longitude,
+            last_modified=datetime.now()
+        ).where(Player.player_id == player_id)
+
 def search(args):
     global failed_consecutive
     num_steps = args.step_limit
@@ -62,6 +79,7 @@ def search(args):
     position = get_pos_by_name(args.location)
     position = (position[0], position[1], 0)
 
+    api = args.api
     if api._auth_provider and api._auth_provider._ticket_expire:
         remaining_time = api._auth_provider._ticket_expire/1000 - time.time()
 
@@ -76,6 +94,8 @@ def search(args):
     for step_location in generate_location_steps(position, num_steps):
         log.info('Scanning step {:d} of {:d}.'.format(i, num_steps**2))
         log.info('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
+
+        set_player_position(args, step_location[0], step_location[1])
 
         response_dict = send_map_request(api, step_location)
         while not response_dict:

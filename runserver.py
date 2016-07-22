@@ -3,6 +3,7 @@
 
 import os
 import logging
+import time
 
 from threading import Thread
 
@@ -11,6 +12,7 @@ from pogom.app import Pogom
 from pogom.utils import get_args, insert_mock_data, load_credentials, FakeArgs
 from pogom.search import search_loop
 from pogom.models import create_tables, Pokemon, Pokestop, Gym
+from pogom.pgoapi import PGoApi
 
 from pogom.pgoapi.utilities import get_pos_by_name
 
@@ -18,6 +20,8 @@ log = logging.getLogger(__name__)
 
 
 def start_locator_thread(args):
+    api = PGoApi()
+    args.api = api
     search_thread = Thread(target=search_loop, args=(args,))
     search_thread.daemon = True
     search_thread.name = 'search_thread'
@@ -58,6 +62,7 @@ if __name__ == '__main__':
     if not args.mock:
         print(args.location)
         start_locator_thread(args)
+        time.sleep(1)
         start_locator_thread(fake_args)
     else:
         insert_mock_data()

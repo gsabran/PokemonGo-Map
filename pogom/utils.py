@@ -37,6 +37,7 @@ def get_args():
     parser.add_argument('-m', '--mock', help='Mock mode. Starts the web server but not the background thread.', action='store_true', default=False)
     parser.add_argument('-k', '--google-maps-key', help='Google Maps Javascript API Key', default=None, dest='gmaps_key')
     parser.set_defaults(DEBUG=False)
+    parser.set_defaults(api=None)
     args = parser.parse_args()
     if args.password is None:
         args.password = getpass.getpass()
@@ -58,6 +59,7 @@ class FakeArgs:
         self.debug = params['debug'] if 'debug' in params else 'store_true'
         self.mock = params['mock'] if 'mock' in params else False
         self.gmaps_key = params['gmaps_key'] if 'gmaps_key' in params else None
+        self.api = None
 
 
 def insert_mock_data():

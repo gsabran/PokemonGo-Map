@@ -58,6 +58,13 @@ class Pokestop(BaseModel):
     lure_expiration = DateTimeField(null=True)
     active_pokemon_id = IntegerField(null=True)
 
+class Player(BaseModel):
+    player_id = CharField(primary_key=True)
+    name = CharField()
+    enabled = BooleanField()
+    latitude = FloatField()
+    longitude = FloatField()
+    last_modified = DateTimeField()
 
 class Gym(BaseModel):
     UNCONTESTED = 0
@@ -154,5 +161,5 @@ def bulk_upsert(cls, data):
 
 def create_tables():
     db.connect()
-    db.create_tables([Pokemon, Pokestop, Gym], safe=True)
+    db.create_tables([Pokemon, Pokestop, Gym, Player], safe=True)
     db.close()
