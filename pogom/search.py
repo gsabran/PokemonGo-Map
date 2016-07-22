@@ -54,7 +54,6 @@ def login(args, position):
 
 def set_player_position(args, latitude, longitude):
     player_id = args.username + args.auth_service
-    print('len(Player.select().where(Player.player_id == player_id))', len(Player.select().where(Player.player_id == player_id)))
     if len(Player.select().where(Player.player_id == player_id)) == 0:
         start_position = get_pos_by_name(args.location)
         start_position = (start_position[0], start_position[1], 0)
@@ -73,8 +72,7 @@ def set_player_position(args, latitude, longitude):
             latitude=latitude,
             longitude=longitude,
             last_modified=datetime.now()
-        ).where(Player.player_id == player_id)
-    print('len(Player.select().where(Player.player_id == player_id))', len(Player.select().where(Player.player_id == player_id)))
+        ).where(Player.player_id == player_id).execute()
 
 def search(args, i):
     num_steps = args.step_limit

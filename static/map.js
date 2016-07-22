@@ -249,6 +249,28 @@ function setupPokestopMarker(item) {
     return marker;
 };
 
+function setupPlayerMarker(item) {
+    if (map_players[item.player_id]) {
+        map_players[item.player_id].setMap(null);
+    }
+    var marker = new google.maps.Marker({
+        position: {
+            lat: item.latitude,
+            lng: item.longitude
+        },
+        map: map,
+        icon: 'static/forts/sacha.png',
+    });
+
+    marker.infoWindow = new google.maps.InfoWindow({
+        content: item.username
+    });
+
+    addListeners(marker);
+    map_players[item.player_id] = marker;
+    return marker;
+};
+
 function addListeners(marker) {
     marker.addListener('click', function() {
         marker.infoWindow.open(map, marker);
@@ -260,16 +282,16 @@ function addListeners(marker) {
         marker.persist = null;
     });
 
-    marker.addListener('mouseover', function() {
-        marker.infoWindow.open(map, marker);
-        updateLabelDiffTime();
-    });
+    // marker.addListener('mouseover', function() {
+    //     marker.infoWindow.open(map, marker);
+    //     updateLabelDiffTime();
+    // });
 
-    marker.addListener('mouseout', function() {
-        if (!marker.persist) {
-            marker.infoWindow.close();
-        }
-    });
+    // marker.addListener('mouseout', function() {
+    //     if (!marker.persist) {
+    //         marker.infoWindow.close();
+    //     }
+    // });
     return marker
 };
 
@@ -348,7 +370,9 @@ function updateMap() {
             }
 
         });
-        console.log('players', result.players);
+        result.players.forEach(function(player) {
+            player.marker = setupPlayerMarker(player);
+        });
 
         clearStaleMarkers();
     });
