@@ -723,6 +723,7 @@ transform_from_wgs_to_gcj(Location(Fort.Latitude, Fort.Longitude))
         except AttributeError:
             break
 
+    print('found %s pokemons' % (len(visible)))
     for poke in visible:
         pokeid = str(poke.pokemon.PokemonId)
         pokename = pokemonsJSON[pokeid]
