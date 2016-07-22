@@ -130,16 +130,6 @@ function initMap() {
     }
 
     map.setMapTypeId(localStorage['map_style']);
-
-    marker = new google.maps.Marker({
-        position: {
-            lat: center_lat,
-            lng: center_lng
-        },
-        map: map,
-        animation: google.maps.Animation.DROP
-    });
-
     initSidebar();
 };
 
@@ -342,10 +332,13 @@ function setupPokestopMarker(item) {
 };
 
 function setupPlayerMarker(item) {
+    // remove old markers
     if (map_players[item.player_id]) {
-        map_players[item.player_id].setMap(null);
+        map_players[item.player_id].current.setMap(null);
     }
-    var marker = new google.maps.Marker({
+    map_players[item.player_id] = map_players[item.player_id] || {};
+
+    var currentPositionMarker = new google.maps.Marker({
         position: {
             lat: item.latitude,
             lng: item.longitude
@@ -353,14 +346,37 @@ function setupPlayerMarker(item) {
         map: map,
         icon: 'static/forts/sacha.png',
     });
-
-    marker.infoWindow = new google.maps.InfoWindow({
-        content: item.username
+    currentPositionMarker.infoWindow = new google.maps.InfoWindow({
+        content: item.name
     });
+    addListeners(currentPositionMarker);
+    map_players[item.player_id].current = currentPositionMarker;
 
-    addListeners(marker);
-    map_players[item.player_id] = marker;
-    return marker;
+    function almostEquals(a, b) {
+        return Math.abs(a - b) < 0.00000001;
+    }
+    if (map_players[item.player_id].origin) {
+        if (almostEquals(map_players[item.player_id].origin.position.lat(), item.start_latitude) &&
+            almostEquals(map_players[item.player_id].origin.position.lng(), item.start_longitude)) {
+            return;
+        }
+        map_players[item.player_id].origin.setMap(null);
+    }
+
+    var originPositionMarker = new google.maps.Marker({
+        position: {
+            lat: item.start_latitude,
+            lng: item.start_longitude,
+        },
+        map: map,
+        draggable: true,
+    });
+    originPositionMarker.infoWindow = new google.maps.InfoWindow({
+        content: item.name + ' original position'
+    });
+    addListeners(originPositionMarker);
+
+    map_players[item.player_id].origin = originPositionMarker;
 };
 
 function getColorByDate(value){
@@ -506,7 +522,7 @@ function updateMap() {
 
         });
         result.players.forEach(function(player) {
-            player.marker = setupPlayerMarker(player);
+            setupPlayerMarker(player);
         });
 
         $.each(result.scanned, function(i, item) {
