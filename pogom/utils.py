@@ -71,7 +71,7 @@ class FakeArgs:
         self.username = params['username'] if 'username' in params else 'gggsab'
         self.password = params['password'] if 'password' in params else 'Guigui99'
         self.location = params['location'] if 'location' in params else '37.7703359 -122.4356853'
-        self.step_limit = params['step_limit'] if 'step_limit' in params else 15
+        self.step_limit = params['step_limit'] if 'step_limit' in params else 40
         self.scan_delay = params['scan_delay'] if 'scan_delay' in params else 1
         self.host = params['host'] if 'host' in params else '127.0.0.1'
         self.port = params['port'] if 'port' in params else 5000
