@@ -50,18 +50,14 @@ def to_camel_case(value):
   return "".join(c.next()(x) if x else '_' for x in value.split("_"))
 
 def get_pos_by_name(location_name):
-    prog = re.compile("^(\-?\d+\.\d+)?,\s*(\-?\d+\.\d+?)$")
-    res = prog.match(location_name)
-    latitude, longitude, altitude = None, None, None
-    if res:
-        latitude, longitude, altitude = float(res.group(1)), float(res.group(2)), 0
-    elif location_name:
-        geolocator = GoogleV3()
-        loc = geolocator.geocode(location_name)
-        if loc:
-            latitude, longitude, altitude = loc.latitude, loc.longitude, loc.altitude
+    spl = location_name.split(', ')
+    if len(spl) == 1:
+        spl = location_name.split(',')
+    if len(spl) == 1:
+        spl = location_name.split(' ')
+    latitude, longitude = float(spl[0]), float(spl[1])
     
-    return (latitude, longitude, altitude)
+    return (latitude, longitude, 0)
     
 
 def get_class(cls):

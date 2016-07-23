@@ -139,23 +139,23 @@ function initSidebar() {
     $('#pokestops-switch').prop('checked', localStorage.showPokestops === 'true');
     $('#scanned-switch').prop('checked', localStorage.showScanned === 'true');
     
-    var input = document.getElementById('next-location');
-    var searchBox = new google.maps.places.SearchBox(input);
+    // var input = document.getElementById('next-location');
+    // var searchBox = new google.maps.places.SearchBox(input);
 
-    searchBox.addListener('places_changed', function() {
-        var places = searchBox.getPlaces();
+    // searchBox.addListener('places_changed', function() {
+    //     var places = searchBox.getPlaces();
 
-        if (places.length == 0) {
-            return;
-        }
+    //     if (places.length == 0) {
+    //         return;
+    //     }
 
-        var loc = places[0].geometry.location;
-        $.post("/next_loc?lat=" + loc.lat() + "&lon=" + loc.lng(), {}).done(function (data) {
-            $("#next-location").val("");
-            map.setCenter(loc);
-            marker.setPosition(loc);
-        });
-    });
+    //     var loc = places[0].geometry.location;
+    //     $.post("/next_loc?lat=" + loc.lat() + "&lon=" + loc.lng(), {}).done(function (data) {
+    //         $("#next-location").val("");
+    //         map.setCenter(loc);
+    //         marker.setPosition(loc);
+    //     });
+    // });
 }
 
 var pad = function (number) { return number <= 99 ? ("0" + number).slice(-2) : number; }
@@ -333,10 +333,11 @@ function setupPokestopMarker(item) {
 
 function setupPlayerMarker(item) {
     // remove old markers
-    if (map_players[item.player_id]) {
-        map_players[item.player_id].current.setMap(null);
+    var player_id = item.player_id;
+    if (map_players[player_id]) {
+        map_players[player_id].current.setMap(null);
     }
-    map_players[item.player_id] = map_players[item.player_id] || {};
+    map_players[player_id] = map_players[player_id] || {};
 
     var currentPositionMarker = new google.maps.Marker({
         position: {
@@ -350,17 +351,20 @@ function setupPlayerMarker(item) {
         content: item.name
     });
     addListeners(currentPositionMarker);
-    map_players[item.player_id].current = currentPositionMarker;
+    map_players[player_id].current = currentPositionMarker;
 
     function almostEquals(a, b) {
         return Math.abs(a - b) < 0.00000001;
     }
-    if (map_players[item.player_id].origin) {
-        if (almostEquals(map_players[item.player_id].origin.position.lat(), item.start_latitude) &&
-            almostEquals(map_players[item.player_id].origin.position.lng(), item.start_longitude)) {
+    if (map_players[player_id].origin) {
+        if (map_players[player_id].origin.isBeingDragged) {
             return;
         }
-        map_players[item.player_id].origin.setMap(null);
+        if (almostEquals(map_players[player_id].origin.position.lat(), item.start_latitude) &&
+            almostEquals(map_players[player_id].origin.position.lng(), item.start_longitude)) {
+            return;
+        }
+        map_players[player_id].origin.setMap(null);
     }
 
     var originPositionMarker = new google.maps.Marker({
@@ -371,12 +375,20 @@ function setupPlayerMarker(item) {
         map: map,
         draggable: true,
     });
+    originPositionMarker.addListener('dragstart', function() {
+        originPositionMarker.isBeingDragged = true;
+    });
+    originPositionMarker.addListener('dragend', function() {
+        var loc = originPositionMarker.position;
+        originPositionMarker.isBeingDragged = false;
+        $.post("/next_loc?lat=" + loc.lat() + "&lng=" + loc.lng() + '&player_id=' + player_id, {});
+    });
     originPositionMarker.infoWindow = new google.maps.InfoWindow({
         content: item.name + ' original position'
     });
     addListeners(originPositionMarker);
 
-    map_players[item.player_id].origin = originPositionMarker;
+    map_players[player_id].origin = originPositionMarker;
 };
 
 function getColorByDate(value){

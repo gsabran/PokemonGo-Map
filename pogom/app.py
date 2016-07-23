@@ -54,12 +54,16 @@ class Pogom(Flask):
 
     def next_loc(self):
         lat = request.args.get('lat', type=float)
-        lon = request.args.get('lon', type=float)
-        if not (lat and lon):
-            print('[-] Invalid next location: %s,%s' % (lat, lon))
+        lng = request.args.get('lng', type=float)
+        player_id = request.args.get('player_id', type=str)
+        if not (lat and lng and player_id):
+            print('[-] Invalid next location: %s,%s  for %s' % (lat, lng, player_id))
             return 'bad parameters', 400
         else:
-            config['NEXT_LOCATION'] = {'lat': lat, 'lon': lon}
+            Player.update(
+                start_latitude=lat,
+                start_longitude=lng,
+            ).where(Player.player_id == player_id).execute()
             return 'ok'
 
     def list_pokemon(self):

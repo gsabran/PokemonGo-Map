@@ -96,28 +96,45 @@ def login(args, position):
 
     log.info('Login to Pokemon Go successful.')
 
+def get_player_id(args):
+    return args.username + args.auth_service
 
-def set_player_position(args, latitude, longitude):
-    player_id = args.username + args.auth_service
+def initialize_player_position(args):
+    player_id = get_player_id(args)
+    start_position = get_pos_by_name(args.location)
+
     if len(Player.select().where(Player.player_id == player_id)) == 0:
-        start_position = get_pos_by_name(args.location)
-        start_position = (start_position[0], start_position[1], 0)
         Player.create(
             player_id=player_id,
             name=args.username,
             enabled=True,
-            latitude=latitude,
-            longitude=longitude,
             last_modified=datetime.now(),
             start_latitude=start_position[0],
             start_longitude=start_position[1]
         )
     else:
         Player.update(
-            latitude=latitude,
-            longitude=longitude,
-            last_modified=datetime.now()
+            last_modified=datetime.now(),
+            start_latitude=start_position[0],
+            start_longitude=start_position[1]
         ).where(Player.player_id == player_id).execute()
+
+def update_player_position(args, latitude, longitude):
+    player_id = get_player_id(args)
+    Player.update(
+        latitude=latitude,
+        longitude=longitude,
+        last_modified=datetime.now()
+    ).where(Player.player_id == player_id).execute()
+
+def almost_equals(a, b):
+    return abs(a - b) < 0.00000001
+
+def player_has_reset_initial_position(args):
+    player_id = get_player_id(args)
+    player = Player.select().where(Player.player_id == player_id)[0]
+    start_position = get_pos_by_name(args.location)
+    return not (almost_equals(player.start_latitude, start_position[0]) and almost_equals(player.start_longitude, start_position[1]))
 
 def search(args, i):
     num_steps = args.step_limit
@@ -140,11 +157,19 @@ def search(args, i):
     for step, step_location in enumerate(generate_location_steps(position, num_steps), 1):
         log.info('Scanning step {:d} of {:d}.'.format(step, total_steps))
         log.info('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
-        set_player_position(args, step_location[0], step_location[1])
+        update_player_position(args, step_location[0], step_location[1])
 
         response_dict = {}
         failed_consecutive = 0
         while not response_dict:
+            if player_has_reset_initial_position(args):
+                # we stop this loop and start another one
+                player_id = get_player_id(args)
+                player = Player.select().where(Player.player_id == player_id)[0]
+                args.location = str(player.start_latitude) + ' ' + str(player.start_longitude)
+                search_loop(args)
+                return
+
             response_dict = send_map_request(api, step_location)
             if response_dict:
                 try:
@@ -161,14 +186,17 @@ def search(args, i):
 
         log.info('Completed {:5.2f}% of scan.'.format(float(step) / num_steps**2*100))
         time.sleep(config['REQ_SLEEP'])
+    return True
 
 
 def search_loop(args):
     i = 0
+    initialize_player_position(args)
     try:
-        while True:
+        should_continue = True
+        while should_continue:
             log.info("Map iteration: {}".format(i))
-            search(args, i)
+            should_continue = search(args, i)
             log.info("Scanning complete.")
             if args.scan_delay > 1:
                 log.info('Waiting {:d} seconds before beginning new scan.'.format(args.scan_delay))
