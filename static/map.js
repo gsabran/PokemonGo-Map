@@ -91,8 +91,8 @@ $.getJSON("static/locales/pokemon." + document.documentElement.lang + ".json").d
     // $selectNotify.val(JSON.parse(readCookie("remember_select_notify"))).trigger("change");
 });
 
-var excludedPokemon = [];
-var notifiedPokemon = [];
+var excludedPokemon = JSON.parse(localStorage['excluded_pok_ids'] || '[]');
+var notifiedPokemon = JSON.parse(localStorage['notified_pok_ids'] || '[]');
 
 // $selectExclude.on("change", function (e) {
 //     excludedPokemon = $selectExclude.val().map(Number);
