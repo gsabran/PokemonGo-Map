@@ -1872,7 +1872,7 @@ body {
   color: #ffffff;
   height: 100%;
   max-width: 80%;
-  overflow-y: auto;
+  overflow-y: scroll;
   padding: 1.5em;
   position: fixed;
   top: 3.50em;
@@ -2046,3 +2046,34 @@ html, body {
         border-left: 0;
         margin-left: 0;
         padding-left: 0; } }
+
+
+.hidden{
+  display: none;
+}
+#exclude-pokemon-modal{
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background-color: white;
+  width: 100%;
+  color: black;
+}
+.poke-container{
+  display: inline-block;
+  text-align: center;
+  padding: 10px;
+  cursor: pointer;
+}
+.poke-container img{
+  display: inline-block;
+}
+.poke-container input{
+  display: inline-block;
+}
+#exclude-pokemon-modal .back{
+  padding: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}

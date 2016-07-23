@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 var $selectExclude = $("#exclude-pokemon");
+var $selectExcludeModal = $("#exclude-pokemon-modal");
 var $selectNotify = $("#notify-pokemon");
 
 var idToPokemon = {};
@@ -18,40 +19,93 @@ $.getJSON("static/locales/pokemon." + document.documentElement.lang + ".json").d
     var pokeList = []
 
     $.each(data, function(key, value) {
-        pokeList.push( { id: key, text: value } );
+        pokeList.push( { id: parseInt(key), text: value } );
         idToPokemon[key] = value;
     });
 
-    JSON.parse(readCookie("remember_select_exclude"));
-    $selectExclude.select2({
-        placeholder: "Select Pokémon",
-        data: pokeList
+    function showModal(localStorageKey, $modal, onChange) {
+        $modal.removeClass('hidden');
+        var toBeAppended = [];
+        var $div = $(`
+            <div class="back">
+                < Back
+            </div>
+        `);
+        $div.click(function() {
+            setTimeout(function(){
+                $modal.addClass('hidden');
+                $modal.empty();
+            }, 0)
+        });
+        toBeAppended.push($div);
+
+        var pokeIds = JSON.parse(localStorage[localStorageKey] || '[]');
+        pokeList.forEach(function(poke) {
+            if (poke.id > 151) { return; }
+            var isExculded = pokeIds.indexOf(poke.id) !== -1;
+            var $div2 = $(`
+                <div class="poke-container">
+                    <img src="/static/icons/${poke.id}.png"/>
+                    <br/>
+                    <input type="checkbox" ${isExculded && 'checked="checked"'} />
+                </div>
+            `);
+            $div2.click(function() {
+                pokeIds = JSON.parse(localStorage[localStorageKey] || '[]');
+
+                var pokeIdx = pokeIds.indexOf(poke.id);
+                if (pokeIdx !== -1) {
+                    pokeIds.splice(pokeIdx, 1);
+                } else {
+                    pokeIds.push(poke.id);
+                }
+                localStorage[localStorageKey] = JSON.stringify(pokeIds);
+                $div2.find('input').prop('checked', pokeIdx === -1);
+                onChange(pokeIds);
+                clearStaleMarkers();
+            });
+            toBeAppended.push($div2);
+        });
+        $modal.append(toBeAppended);
+    };
+
+    $selectExclude.click(function() {
+        showModal('excluded_pok_ids', $selectExcludeModal, function(pokeIds) { excludedPokemon = pokeIds; });
     });
-    $selectExclude.val(JSON.parse(readCookie("remember_select_exclude"))).trigger("change");
+    $selectNotify.click(function() {
+        showModal('notified_pok_ids', $selectExcludeModal, function(pokeIds) { notifiedPokemon = pokeIds; });
+    });
+
+    // JSON.parse(readCookie("remember_select_exclude"));
+    // $selectExclude.select2({
+    //     placeholder: "Select Pokémon",
+    //     data: pokeList
+    // });
+    // $selectExclude.val(JSON.parse(readCookie("remember_select_exclude"))).trigger("change");
     
-    JSON.parse(readCookie("remember_select_notify"));
-    $selectNotify.select2({
-        placeholder: "Select Pokémon",
-        data: pokeList
-    });
-    $selectNotify.val(JSON.parse(readCookie("remember_select_notify"))).trigger("change");
+    // JSON.parse(readCookie("remember_select_notify"));
+    // $selectNotify.select2({
+    //     placeholder: "Select Pokémon",
+    //     data: pokeList
+    // });
+    // $selectNotify.val(JSON.parse(readCookie("remember_select_notify"))).trigger("change");
 });
 
 var excludedPokemon = [];
 var notifiedPokemon = [];
 
-$selectExclude.on("change", function (e) {
-    excludedPokemon = $selectExclude.val().map(Number);
-    clearStaleMarkers();
-    document.cookie = 'remember_select_exclude='+JSON.stringify(excludedPokemon)+
-            '; max-age=31536000; path=/';
-});
+// $selectExclude.on("change", function (e) {
+//     excludedPokemon = $selectExclude.val().map(Number);
+//     clearStaleMarkers();
+//     document.cookie = 'remember_select_exclude='+JSON.stringify(excludedPokemon)+
+//             '; max-age=31536000; path=/';
+// });
 
-$selectNotify.on("change", function (e) {
-    notifiedPokemon = $selectNotify.val().map(Number);
-    document.cookie = 'remember_select_notify='+JSON.stringify(notifiedPokemon)+
-            '; max-age=31536000; path=/';
-});
+// $selectNotify.on("change", function (e) {
+//     notifiedPokemon = $selectNotify.val().map(Number);
+//     document.cookie = 'remember_select_notify='+JSON.stringify(notifiedPokemon)+
+//             '; max-age=31536000; path=/';
+// });
 
 var map;
 
@@ -452,7 +506,7 @@ function clearStaleMarkers() {
     $.each(map_pokemons, function(key, value) {
 
         if (map_pokemons[key]['disappear_time'] < new Date().getTime() ||
-                excludedPokemon.indexOf(map_pokemons[key]['pokemon_id']) >= 0) {
+                excludedPokemon.indexOf(parseInt(map_pokemons[key]['pokemon_id'])) >= 0) {
             map_pokemons[key].marker.setMap(null);
             delete map_pokemons[key];
         }
@@ -636,17 +690,6 @@ var updateLabelDiffTime = function() {
 };
 
 window.setInterval(updateLabelDiffTime, 1000);
-
-function readCookie(name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1,c.length);
-        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-    }
-    return null;
-}
 
 function sendNotification(title, text, icon) {
     if (Notification.permission !== "granted") {

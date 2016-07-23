@@ -29,7 +29,7 @@
 		<!-- retina iPhone 6 iOS 7 -->
 		<link rel="apple-touch-icon" href="static/appicons/180x180.png" sizes="180x180">
 
-		<link rel="stylesheet" href="static/dist/css/app.min.css" />
+		<link rel="stylesheet" href="static/css/main.css" />
 		<script src="static/js/vendor/modernizr.custom.js"></script>
 	</head>
 	<body id="top">
@@ -86,17 +86,16 @@
 			</div>
 			<!-- <button id="trigger-overlay">Test overlay</button> -->
 			<div>
-				<label for="exclude-pokemon">
+				<div id="exclude-pokemon">
 					<h3>Hide common Pokémon</h3>
-	        		<select id="exclude-pokemon" multiple="multiple"></select>
-	      		</label>
+				</div>
 			</div>
 			<div style="margin-top: 25px;">
-				<label for="notify-pokemon">
+				<div id="notify-pokemon">
 					<h3>Notify of Pokémon</h3>
-					<select id="notify-pokemon" multiple="multiple"></select>
-				</label>
+				</div>
 			</div>
+			<div id="exclude-pokemon-modal" class="hidden"></div>
 		</nav>
 
 
