@@ -75,37 +75,10 @@ $.getJSON("static/locales/pokemon." + document.documentElement.lang + ".json").d
     $selectNotify.click(function() {
         showModal('notified_pok_ids', $selectExcludeModal, function(pokeIds) { notifiedPokemon = pokeIds; });
     });
-
-    // JSON.parse(readCookie("remember_select_exclude"));
-    // $selectExclude.select2({
-    //     placeholder: "Select Pokémon",
-    //     data: pokeList
-    // });
-    // $selectExclude.val(JSON.parse(readCookie("remember_select_exclude"))).trigger("change");
-    
-    // JSON.parse(readCookie("remember_select_notify"));
-    // $selectNotify.select2({
-    //     placeholder: "Select Pokémon",
-    //     data: pokeList
-    // });
-    // $selectNotify.val(JSON.parse(readCookie("remember_select_notify"))).trigger("change");
 });
 
 var excludedPokemon = JSON.parse(localStorage['excluded_pok_ids'] || '[]');
 var notifiedPokemon = JSON.parse(localStorage['notified_pok_ids'] || '[]');
-
-// $selectExclude.on("change", function (e) {
-//     excludedPokemon = $selectExclude.val().map(Number);
-//     clearStaleMarkers();
-//     document.cookie = 'remember_select_exclude='+JSON.stringify(excludedPokemon)+
-//             '; max-age=31536000; path=/';
-// });
-
-// $selectNotify.on("change", function (e) {
-//     notifiedPokemon = $selectNotify.val().map(Number);
-//     document.cookie = 'remember_select_notify='+JSON.stringify(notifiedPokemon)+
-//             '; max-age=31536000; path=/';
-// });
 
 var map;
 
@@ -192,24 +165,6 @@ function initSidebar() {
     $('#pokemon-switch').prop('checked', localStorage.showPokemon === 'true');
     $('#pokestops-switch').prop('checked', localStorage.showPokestops === 'true');
     $('#scanned-switch').prop('checked', localStorage.showScanned === 'true');
-    
-    // var input = document.getElementById('next-location');
-    // var searchBox = new google.maps.places.SearchBox(input);
-
-    // searchBox.addListener('places_changed', function() {
-    //     var places = searchBox.getPlaces();
-
-    //     if (places.length == 0) {
-    //         return;
-    //     }
-
-    //     var loc = places[0].geometry.location;
-    //     $.post("/next_loc?lat=" + loc.lat() + "&lon=" + loc.lng(), {}).done(function (data) {
-    //         $("#next-location").val("");
-    //         map.setCenter(loc);
-    //         marker.setPosition(loc);
-    //     });
-    // });
 }
 
 var pad = function (number) { return number <= 99 ? ("0" + number).slice(-2) : number; }
