@@ -23,7 +23,7 @@ There is an [Android port](https://github.com/omkarmoghe/Pokemap) in the works. 
 ### deployement
 
 - install the heroku CLI, sign in for heroku etc
-- set the environment variables `POK_USERNAME`, `POK_PSW`, `POK_LOCATION`, `POK_STEP_LINIT` and `POK_GMAP_KEY`
+- set the environment variables `POK_USERNAME`, `POK_PSW`, `POK_LOCATION`, `POK_STEP_LIMIT` and `POK_GMAP_KEY`
 - deploy to heroku
 
 ## Warnings
