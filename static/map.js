@@ -424,12 +424,6 @@ function setupScannedMarker(item) {
         strokeWeight: 1
     });
 
-    // marker.infoWindow = new google.maps.InfoWindow({
-    //     content: scannedLabel(item.last_modified),
-    //     position: circleCenter
-    // });
-
-    //addListeners(marker);
     return marker;
 };
 
@@ -443,17 +437,6 @@ function addListeners(marker) {
     google.maps.event.addListener(marker.infoWindow, 'closeclick', function() {
         marker.persist = null;
     });
-
-    // marker.addListener('mouseover', function() {
-    //     marker.infoWindow.open(map, marker);
-    //     updateLabelDiffTime();
-    // });
-
-    // marker.addListener('mouseout', function() {
-    //     if (!marker.persist) {
-    //         marker.infoWindow.close();
-    //     }
-    // });
     return marker
 };
 
