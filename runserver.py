@@ -46,7 +46,7 @@ if __name__ == '__main__':
         'username': os.environ.get('POK_SEC_EMAIL'),
         'password': os.environ.get('POK_SEC_PSW'),
         'auth_service': 'google',
-        'step_limit': os.environ.get('POK_STEP_LINIT'),
+        'step_limit': int(os.environ.get('POK_STEP_LINIT')),
     })
 
     if args.debug:
