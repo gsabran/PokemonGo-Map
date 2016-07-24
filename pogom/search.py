@@ -81,7 +81,7 @@ def generate_location_steps(initial_location, num_steps):
                     lat_location += lat_gap_degrees
                     lng_location += calculate_lng_degrees(lat_location)
 
-                STEP_REDUCTION = 3
+                STEP_REDUCTION = 1 # no reduction
                 for i in range(STEP_REDUCTION):
                     yield (
                         i * 1.0 / STEP_REDUCTION * lat_location + (STEP_REDUCTION - i) * 1.0  / STEP_REDUCTION * _lat,
