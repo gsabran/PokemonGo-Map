@@ -58,6 +58,7 @@ def generate_location_steps(initial_location, num_steps):
 
         for direction in range(6):
             for i in range(ring):
+                _lat, _lng = lat_location, lng_location
                 if direction == 0: #Right
                     lng_location += calculate_lng_degrees(lat_location) * 2
 
@@ -80,7 +81,13 @@ def generate_location_steps(initial_location, num_steps):
                     lat_location += lat_gap_degrees
                     lng_location += calculate_lng_degrees(lat_location)
 
-                yield (lat_location, lng_location, 0) #Middle circle
+                STEP_REDUCTION = 3
+                for i in range(STEP_REDUCTION):
+                    yield (
+                        i * 1.0 / STEP_REDUCTION * lat_location + (STEP_REDUCTION - i) * 1.0  / STEP_REDUCTION * _lat,
+                        i * 1.0 / STEP_REDUCTION * lng_location + (STEP_REDUCTION - i) * 1.0  / STEP_REDUCTION * _lng,
+                        0
+                    ) #Middle circle
 
         ring += 1
 
