@@ -5,6 +5,8 @@ import os
 import sys
 import logging
 import time
+import json
+import random
 
 from threading import Thread
 from flask_cors import CORS, cross_origin
@@ -41,13 +43,6 @@ if __name__ == '__main__':
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
     args = get_args()
-    fake_args = FakeArgs({
-        'location': '37.7512063 -122.4142236',
-        'username': os.environ.get('POK_SEC_EMAIL'),
-        'password': os.environ.get('POK_SEC_PSW'),
-        'auth_service': 'google',
-        'step_limit': int(os.environ.get('POK_STEP_LIMIT')),
-    })
 
     if args.debug:
         logging.getLogger("requests").setLevel(logging.DEBUG)
@@ -71,8 +66,19 @@ if __name__ == '__main__':
     if not args.mock:
         print(args.location)
         start_locator_thread(args)
-        time.sleep(1)
-        start_locator_thread(fake_args)
+        _additional_accounts = os.environ.get('POK_ACCOUNT')
+        if _additional_accounts is not None:
+            additional_accounts = json.loads(_additional_accounts)
+            for fake_account in additional_accounts:
+                time.sleep(1)
+                fake_args = FakeArgs({
+                    'location': str(position[0] + (random.random() - 0.5) * 0.04) + ' ' + str(position[1] + (random.random() - 0.5) * 0.04),
+                    'username': fake_account[0],
+                    'password': fake_account[2],
+                    'auth_service': 'ptc',
+                    'step_limit': int(os.environ.get('POK_STEP_LIMIT')),
+                })
+                start_locator_thread(fake_args)
     else:
         insert_mock_data()
 
