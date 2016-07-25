@@ -549,6 +549,30 @@ function updateMap() {
     });
 };
 
+var currentPositionMarker;
+function showCurrentPosition(position) {
+    if (currentPositionMarker) {
+        var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        currentPositionMarker.setPosition(latlng);
+    } else {
+        currentPositionMarker = new google.maps.Marker({
+            position: {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            },
+            map: map,
+            icon: 'static/forts/Pstop.png'
+        });   
+    }
+};
+function watchPositionChange() {
+    navigator.geolocation.watchPosition(showCurrentPosition, function(){}, {
+        timeout: 30000,
+        enableHighAccuracy: true,
+        maximumAge: 1000
+    });
+};
+
 window.setInterval(updateMap, 1000);
 updateMap();
 
