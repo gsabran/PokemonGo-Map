@@ -300,8 +300,9 @@ function setupPokemonMarker(item) {
         content: pokemonLabel(item.pokemon_name, item.disappear_time, item.pokemon_id, item.latitude, item.longitude)
     });
     
-    if (notifiedPokemon.indexOf(item.pokemon_id) > -1) {
-        sendNotification('A wild ' + item.pokemon_name + ' appeared!', 'Click to load map', 'static/icons/' + item.pokemon_id + '.png')
+    var distance = distanceToPokemon(item);
+    if (notifiedPokemon.indexOf(item.pokemon_id) > -1 && distance < notificationDistance && distance !== -1) {
+        sendNotification('A wild ' + item.pokemon_name + ' appeared ' + distance.toFixed(1) + ' km away!', 'Click to load map', 'static/icons/' + item.pokemon_id + '.png')
     }
 
     addListeners(marker);
@@ -555,7 +556,9 @@ function updateMap() {
 };
 
 var currentPositionMarker;
+var currentPosition;
 function showCurrentPosition(position) {
+    currentPosition = position;
     if (currentPositionMarker) {
         var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
         currentPositionMarker.setPosition(latlng);
@@ -670,3 +673,41 @@ function sendNotification(title, text, icon) {
         };
     }
 }
+
+var notificationDistance = JSON.parse(localStorage['notification-distance'] || '11');
+$('#notification-distance input').val(notificationDistance);
+
+function handleNotificationDistanceChange() {
+    notificationDistance =  $('#notification-distance input').val();
+    localStorage['notification-distance'] = JSON.stringify(notificationDistance);
+};
+$('#notification-distance').change(handleNotificationDistanceChange);
+
+function distanceToPokemon(pokemon) {
+    if (!currentPosition) { return -1; }
+
+    // http://stackoverflow.com/a/27943/2054629
+    function deg2rad(deg) {
+      return deg * (Math.PI/180)
+    }
+    function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+      var R = 6371; // Radius of the earth in km
+      var dLat = deg2rad(lat2-lat1);  // deg2rad below
+      var dLon = deg2rad(lon2-lon1); 
+      var a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2)
+        ; 
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      var d = R * c; // Distance in km
+      return d;
+    }
+
+    return getDistanceFromLatLonInKm(
+        currentPosition.coords.latitude,
+        currentPosition.coords.longitude,
+        pokemon.latitude,
+        pokemon.longitude
+    );
+};

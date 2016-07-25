@@ -2077,3 +2077,13 @@ html, body {
   cursor: pointer;
   font-weight: bold;
 }
+#notification-distance{
+  display: block;
+  color: black;
+}
+#notification-distance input{
+  width: 50px;
+}
+#nav >div{
+  float: left;
+}
