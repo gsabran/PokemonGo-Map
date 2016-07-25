@@ -158,6 +158,11 @@ function initMap() {
 
     map.setMapTypeId(localStorage['map_style']);
     initSidebar();
+
+    
+    window.setInterval(updateMap, 1000);
+    updateMap();
+    watchPositionChange();
 };
 
 function initSidebar() {
@@ -572,9 +577,6 @@ function watchPositionChange() {
         maximumAge: 1000
     });
 };
-
-window.setInterval(updateMap, 1000);
-updateMap();
 
 document.getElementById('gyms-switch').onclick = function() {
     localStorage["showGyms"] = this.checked;
